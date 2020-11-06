@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
 
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'models/item.dart';
 
 void main() {
@@ -43,6 +45,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       );
       newTaskController.text = "";
+      save();
     });
   }
 
@@ -50,8 +53,30 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       widget.items.removeAt(index);
     });
+    save();
   }
 
+  Future load() async {
+    var prefs = await SharedPreferences.getInstance();
+    var data = prefs.getString('data');
+
+    if (data != null) {
+      Iterable decoded = jsonDecode(data);
+      List<Item> result = decoded.map((x) => Item.fromJson(x)).toList();
+      setState(() {
+        widget.items = result;
+      });
+    }
+  }
+
+  save() async {
+    var prefs = await SharedPreferences.getInstance();
+    await prefs.setString('data', jsonEncode(widget.items));
+  }
+
+  _MyHomePageState() {
+    load();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,6 +111,7 @@ class _MyHomePageState extends State<MyHomePage> {
               onChanged: (value) {
                 setState(() {
                   item.done = value;
+                  save();
                 });
               },
             ),
